@@ -68,4 +68,21 @@ func (c *Collection) Invalidate(run model.RunID, revision model.RevisionID) {
         }
     }
     c.samples[run] = retained
+    // Rebuild the source and revision indexes from the retained samples so a
+    // switched-away revision cannot leave stale probes behind. Recomputing from
+    // scratch keeps repeated switches idempotent.
+    if len(retained) == 0 {
+        delete(c.samples, run)
+        delete(c.sources, run)
+        delete(c.revisions, run)
+        return
+    }
+    sourceSet := make(map[string]struct{}, len(retained))
+    current := retained[0].Revision
+    for _, evidence := range retained {
+        sourceSet[evidence.SourceID] = struct{}{}
+        current = evidence.Revision
+    }
+    c.sources[run] = sourceSet
+    c.revisions[run] = current
 }
