@@ -68,4 +68,14 @@ func (c *Collection) Invalidate(run model.RunID, revision model.RevisionID) {
         }
     }
     c.samples[run] = retained
+    sources := make(map[string]struct{})
+    for _, evidence := range retained {
+        sources[evidence.SourceID] = struct{}{}
+    }
+    c.sources[run] = sources
+    if len(retained) == 0 {
+        delete(c.revisions, run)
+    } else {
+        c.revisions[run] = revision
+    }
 }
